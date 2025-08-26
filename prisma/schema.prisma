@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Roadmap {
+  id          String   @id @default(cuid()) // or you can keep manual id if preferred
+  slug        String   @unique // maps your original `id` field (like "network-starter")
+  title       String
+  description String
+  icon        String   // changed from enum to string
+  modules     Int
+  topics      Topic[]
+}
+
+model Topic {
+  id        Int      @id @default(autoincrement())
+  content   String
+  roadmapId String
+  roadmap   Roadmap  @relation(fields: [roadmapId], references: [id])
+}
+
+
+// New model for newsletter subscribers
+model NewsletterSubscriber {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  isVerified    Boolean   @default(false)
+  subscribedAt  DateTime  @default(now())
+  unsubscribedAt DateTime? // null means still subscribed
+  userId        String?   // Optional relation to a user if they exist
+  //user         User?     @relation(fields: [userId], references: [id])
+}

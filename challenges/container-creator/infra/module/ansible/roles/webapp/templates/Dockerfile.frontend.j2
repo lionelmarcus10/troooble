@@ -1,0 +1,26 @@
+FROM nginx:alpine
+COPY <<EOF /usr/share/nginx/html/index.html
+<html>
+    <head>
+        <title>Frontend</title>
+    </head>
+    <body>
+        <h1>Frontend</h1>
+        <p>This should call the backend...</p>
+        <div id="result"></div>
+        <script>
+            # Api must be called by client on http://<baseurl>:80/api
+            fetch('/api/')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = '<p>Backend Response: ' + JSON.stringify(data) + '</p>';
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = '<p>Error calling backend: ' + error + '</p>';
+                });
+        </script>
+    </body>
+</html>
+EOF
+# import redirection configuration for api endpoint
+COPY missing.conf /etc/nginx/conf.d/default.conf

@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Roadmap {
+  id          String   @id @default(cuid()) // or you can keep manual id if preferred
+  slug        String   @unique // maps your original `id` field (like "network-starter")
+  title       String
+  description String
+  icon        String   // changed from enum to string
+  modules     Int
+  topics      Topic[]
+}
+
+model Topic {
+  id        Int      @id @default(autoincrement())
+  content   String
+  roadmapId String
+  roadmap   Roadmap  @relation(fields: [roadmapId], references: [id])
+}
+
+
+// New model for newsletter subscribers
+model NewsletterSubscriber {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  isVerified    Boolean   @default(false)
+  subscribedAt  DateTime  @default(now())
+  unsubscribedAt DateTime? // null means still subscribed
+  userId        String?   // Optional relation to a user if they exist
+  //user         User?     @relation(fields: [userId], references: [id])
+}
+
+// model for labels
+model Label {
+  id         Int                @id @default(autoincrement())
+  name       String             @unique
+  color      String
+  challenges ChallengeLabel[]
+}
+
+// model for challenges
+model Challenge {
+  id          Int                @id @default(autoincrement())
+  title       String
+  description String
+  difficulty  String             // e.g., "Easy", "Medium", "Hard"
+  labels      ChallengeLabel[]
+}
+
+// Junction table for many-to-many relationship
+model ChallengeLabel {
+  challengeId Int
+  labelId     Int
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  label       Label     @relation(fields: [labelId], references: [id])
+
+  @@id([challengeId, labelId])
+}
+
+
+model favoriteChallenge {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  challengeId Int
+  addedAt     DateTime @default(now())
+}
+
+model favoriteRoadmap {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  roadmapId String
+  addedAt   DateTime @default(now())
+}

@@ -1,0 +1,57 @@
+---
+# Tasks to setup Docker and docker-compose
+
+- name: Install required packages
+  become: true
+  yum:
+    name:
+      - docker
+      - python3-pip
+      - cronie
+    state: present
+  tags: 
+    - docker_install
+
+- name: Add user to docker group
+  become: true
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+  tags:
+    - docker_install
+
+# Ensure cron service is running
+- name: Ensure crond service is started and enabled
+  become: true
+  systemd:
+    name: crond
+    state: started
+    enabled: yes
+    
+- name: Download docker-compose binary
+  become: true
+  get_url:
+    url: "https://github.com/docker/compose/releases/latest/download/docker-compose-{{ ansible_system | lower }}-{{ ansible_architecture }}"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+- name: Ensure docker-compose binary is executable
+  become: true
+  file:
+    path: /usr/local/bin/docker-compose
+    mode: '0755'
+    state: file
+
+- name: Verify docker-compose installation
+  become: true
+  command: docker-compose version
+  register: docker_compose_version
+  changed_when: false
+
+- name: Start and enable Docker service
+  become: true
+  systemd:
+    name: docker
+    state: started
+    enabled: yes

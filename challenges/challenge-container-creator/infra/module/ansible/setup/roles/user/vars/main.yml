@@ -1,0 +1,3 @@
+username: "${username}"
+user_password: "${user_password}"
+user_ssh_public_key: "${user_ssh_public_key}"

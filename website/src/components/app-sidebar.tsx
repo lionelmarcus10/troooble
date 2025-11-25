@@ -2,100 +2,100 @@
 
 import * as React from "react"
 import {
-  LayoutDashboard,
-  Newspaper,
-  SquareTerminal,
-  TrafficCone 
-} from "lucide-react"
+  IconDashboard,
+  IconInnerShadowTop,
+  IconBug,
+  IconNews,
+  IconHelp,
+  IconSitemap,
+} from "@tabler/icons-react"
 
-import Image from "next/image"
+import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavSecondary } from "@/components/nav-secondary"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import ProfileDropdown from "./kokonutui/profile-dropdown"
 
-// This is sample data.
+export interface User {
+  name: string
+  email: string
+  avatar: string
+}
+
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Troooble Inc.",
-      logo: () => <Image src="/logo.svg" alt="Troooble Inc." width={200} height={200} className="rounded-sm" />,
-      plan: "Enterprise",
-    }
-  ],
   navMain: [
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: LayoutDashboard,
-      isActive: true,
+      icon: IconDashboard,
     },
     {
       title: "Playground",
-      url: "/dashboard/playground",
-      icon: SquareTerminal,
-      isActive: false,
+      url: "/dashboard/user/playground",
+      icon: IconBug,
+    },
+  ],
+  navSecondary: [
+     {
+      title: "Get Help",
+      url: "/issues/help",
+      icon: IconHelp,
+    },
+  ],
+  documents: [
+    {
+      title: "Articles",
+      url: "/dashboard/user/articles",
+      icon: IconNews,
+      name: "Articles",
     },
     {
       title: "Roadmap",
-      url: "/dashboard/roadmap",
-      icon: TrafficCone,
-      isActive: false,
-    },
-    {
-      title: "Articles",
-      url: "/dashboard/articles",
-      icon: Newspaper,
-      isActive: false,
-    },
-  ],
-  projects: [
-  //   {
-  //     name: "Design Engineering",
-  //     url: "#",
-  //     icon: Frame,
-  //   },
-  //   {
-  //     name: "Sales & Marketing",
-  //     url: "#",
-  //     icon: PieChart,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
+      url: "/dashboard/user/roadmap",
+      icon: IconSitemap,
+      name: "Roadmap",
+    }
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  user: User
+}
+
+export function AppSidebar({ user, ...props }: AppSidebarProps) {
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="#">
+                <IconInnerShadowTop className="!size-5" />
+                <span className="text-base font-semibold">Troooble Inc.</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavDocuments items={data.documents} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
-        <ProfileDropdown className="" />
+        <ProfileDropdown user={user} />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   )
 }

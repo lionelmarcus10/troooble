@@ -1,0 +1,33 @@
+hints:
+  steps:
+    - step: 1
+      title: "Check Service Accessibility"
+      text: |
+        Ensure both your frontend and backend services are accessible from the internet. Use tools like `curl` or `wget` to test connectivity and validate that the services respond as expected.
+    - step: 2
+      title: "Validate Local Connectivity"
+      text: |
+        Test local connectivity using `curl` or `wget` to validate service responses on localhost.
+    - step: 3
+      title: "Check Docker Container Status"
+      text: |
+        Verify that all Docker containers in your compose stack are running and healthy.
+    - step: 4
+      title: "Examine Frontend Dockerfile"
+      text: |
+        Review your frontend Dockerfile to confirm proper setup and successful builds.
+    - step: 5
+      title: "Review docker-compose.yml"
+      text: |
+        Check your docker-compose.yml syntax and service definitions for correctness.
+    - step: 6
+      title: "Check service local availability"
+      text: |
+        Does your docker-compose setup work correctly on your local machine ?
+    - step: 7
+      title: "Check API Forwarding"
+      text: |
+        - "Is your frontend correctly forwarding API requests to the backend service ?"
+        - "Is firewalld blocking external access to required ports ?"
+        - "Is only your frontend accessible from the internet while keeping internal services protected ?"
+

@@ -1,3 +1,0 @@
-backend_port: ${backend_port}
-frontend_port: ${frontend_port}
-username: ${username}

@@ -1,0 +1,147 @@
+step_validator:
+  # STEP 1: Check Service Accessibility (from hints step 1)
+  - step: 1
+    title: "Check Service Accessibility"
+    description: "Ensure both your frontend and backend services are accessible from the internet using curl or wget"
+    validations:
+      - name: "Test external frontend access"
+        type: "command"
+        command: "timeout 10 curl -s -o /dev/null -w '%{http_code}' http://$(curl -s https://ipinfo.io/ip):80"
+        expected_output: "200"
+        success_message: "Frontend service successfully accessible from internet on port 80"
+        failure_message: "Frontend service is not accessible from internet. Verify Security Group configuration and firewall rules"
+      
+      - name: "Test external backend access"
+        type: "command"
+        command: "timeout 10 curl -s -o /dev/null -w '%{http_code}' http://$(curl -s https://ipinfo.io/ip):5000"
+        expected_output: "000"
+        success_message: "Backend service properly secured and blocked from direct internet access"
+        failure_message: "Backend service is accessible from internet. This represents a security vulnerability that must be addressed"
+
+
+  # STEP 2: Validate Local Connectivity (from hints step 2)
+  - step: 2
+    title: "Validate Local Connectivity"
+    description: "Test local connectivity using curl or wget to validate service responses on localhost"
+    validations:
+      - name: "Test localhost frontend"
+        type: "command"
+        command: "curl -s -o /dev/null -w '%{http_code}' http://localhost:80"
+        expected_output: "200"
+        timeout: 10
+        success_message: "Frontend service responds correctly on localhost port 80"
+        failure_message: "Frontend service is not responding on localhost port 80. Check service status and configuration"
+      
+      - name: "Test localhost backend"
+        type: "command"
+        command: "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000"
+        expected_output: "200"
+        timeout: 10
+        success_message: "Backend service responds correctly on localhost port 5000"
+        failure_message: "Backend service is not responding on localhost port 5000. Verify service is running and bound to correct port"
+
+      - name: "Test container networking"
+        type: "command"
+        command: "docker exec $(docker-compose -f ~/webapp/docker-compose.yml ps -q frontend) ping -c 1 backend >/dev/null 2>&1 && echo 'connected' || echo 'not connected'"
+        expected_output: "connected"
+        success_message: "Container networking is properly configured and services can communicate"
+        failure_message: "Container networking is not functioning correctly. Review Docker network configuration and service definitions"
+
+  # STEP 3: Check Docker Container Status (from hints step 3)
+  - step: 2.1
+    title: "Check Docker Container Status"
+    description: "Verify that all Docker containers in your compose stack are running and healthy"
+    validations:
+      - name: "Check Docker service"
+        type: "command"
+        command: "systemctl is-active docker"
+        expected_output: "active"
+        success_message: "Docker service is running and active"
+        failure_message: "Docker service is not active. Start the Docker daemon to proceed"
+      
+      - name: "Check containers running"
+        type: "command"
+        command: "cd ~/webapp && docker-compose ps | grep 'Up' | wc -l"
+        expected_output: "2"
+        success_message: "Both frontend and backend containers are running successfully"
+        failure_message: "Containers are not running. Review docker-compose logs to identify startup issues"
+      
+      - name: "Verify container health"
+        type: "command"
+        command: "cd ~/webapp && docker-compose ps --services | wc -l"
+        expected_output: "2"
+        success_message: "All expected containers are present in the compose stack"
+        failure_message: "Missing containers in compose stack. Verify docker-compose.yml service definitions"
+
+      - name: "Get running container names"
+        type: "command"
+        command: "cd ~/webapp && docker-compose ps --filter 'status=running' --format 'table {{.Name}}' | tail -n +2 | tr '\n' ' '"
+        expected_pattern: ".*webapp.*frontend.*webapp.*backend.*"
+        success_message: "Both containers are running with correct naming convention"
+        failure_message: "Containers are not running or have incorrect naming. Verify service definitions and container status"
+
+  # STEP 4: Review docker-compose.yml (from hints step 5)
+  - step: 2.2
+    title: "Review docker-compose.yml"
+    description: "Check your docker-compose.yml syntax and service definitions for correctness"
+    validations:      
+      - name: "Check service definitions"
+        type: "command"
+        command: "cd ~/webapp && docker-compose config --services | sort | tr '\\n' ' '"
+        expected_pattern: "backend frontend"
+        success_message: "Both backend and frontend services are properly defined"
+        failure_message: "Missing service definitions in docker-compose.yml. Ensure both backend and frontend services are configured"
+      
+  # STEP 5: Check if frontend redirects to backend (from hints step 4)
+  - step: 3
+    title: "Check Frontend to Backend Redirection"
+    description: "Verify that the frontend service correctly redirects requests to the backend service"
+    validations:
+      - name: "Test frontend to backend redirection"
+        type: "command"
+        command: "curl -s -o /dev/null -w '%{http_code}' http://localhost:80/api/"
+        expected_output: "200"
+        success_message: "Frontend correctly redirects API requests to backend service"
+        failure_message: "Frontend does not redirect to backend. Verify reverse proxy configuration"
+
+
+  # STEP 7: Check API Forwarding (from hints step 7)
+  - step: 4
+    title: "Check API Forwarding"
+    description: "Verify frontend correctly forwards API requests and firewalld protects internal services"
+    validations:
+      - name: "Test API forwarding to backend"
+        type: "command"
+        command: "curl -s -o /dev/null -w '%{http_code}' http://localhost:80/api"
+        expected_output: "200"
+        timeout: 10
+        success_message: "Frontend successfully forwards API requests to backend service"
+        failure_message: "API forwarding is not functioning. Review nginx configuration file for proper upstream definitions"
+      
+      - name: "Check firewalld blocking external access"
+        type: "command"
+        command: |-
+          if systemctl is-active --quiet firewalld; then
+            timeout 3 nc -zv $(curl -s https://ipinfo.io/ip) 5000 2>&1 | grep -q "Connection refused\|Connection timed out" && echo "blocking" || echo "not blocking"
+          else
+            echo "not blocking"
+          fi
+        expected_output: "blocking"
+        success_message: "Firewalld properly blocks external access to internal services"
+        failure_message: "Firewalld is not blocking external access to internal services. This represents a security vulnerability"
+      
+      - name: "Verify only frontend accessible from internet"
+        type: "command"
+        command: |
+          PUBLIC_IP=\$(curl -s https://ipinfo.io/ip)
+          EXT_80=\$(timeout 5 curl -s -o /dev/null -w \"%{http_code}\" http://\$PUBLIC_IP:80)
+          timeout 3 nc -zv \$PUBLIC_IP 5000 >/dev/null 2>&1
+          EXT_5000_BLOCKED=\$?
+          if [ \"\$EXT_80\" = \"200\" ] && [ \$EXT_5000_BLOCKED -ne 0 ]; then
+              echo protected
+          else
+              echo not protected
+          fi
+        expected_output: "protected"
+        success_message: "Security configuration is correct: frontend accessible from internet while internal services are protected"
+        failure_message: "Internal services are not properly protected from internet access. Review firewall rules and security group configuration"

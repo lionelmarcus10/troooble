@@ -1,0 +1,5 @@
+backend_port: ${backend_port}
+frontend_port: ${frontend_port}
+username: "${username}"
+user_password: "${user_password}"
+user_ssh_public_key: "${user_ssh_public_key}"

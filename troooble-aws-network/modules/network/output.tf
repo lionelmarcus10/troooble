@@ -11,11 +11,11 @@ output "private_subnet_ids" {
 }
 
 output "nat_gateway_ids" {
-    value = [for n in aws_nat_gateway.nat : n.id]
+    value = var.enable_nat_gateway ? [for n in aws_nat_gateway.nat : n.id] : []
 }
 
 output "bucket_name" {
-    value = aws_s3_bucket.bucket.bucket
+    value = data.aws_s3_bucket.bucket.bucket
 }
 
 output "user_public_key_id" {
@@ -36,4 +36,12 @@ output "secretsmanager_ssh_private_key_id" {
 
 output "secretsmanager_ssh_public_key_id" {
     value = aws_secretsmanager_secret.ssh_public_key.id
+}
+
+output "ssm_profile_name" {
+    value = aws_iam_instance_profile.ssm_profile.name
+}
+
+output "ssm_role_name" {
+    value = aws_iam_role.ssm_role.name
 }

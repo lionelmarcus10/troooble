@@ -78,3 +78,65 @@ model favoriteRoadmap {
   roadmapId String
   addedAt   DateTime @default(now())
 }
+
+// User model to track subscription and user data
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  supabaseId    String         @unique // Link to Supabase auth user
+  fullName      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+  polarCustomerId String?      @unique
+}
+
+// Subscription model to track Polar subscriptions
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Polar-specific fields
+  polarSubscriptionId  String    @unique
+  polarCustomerId      String
+  polarProductId       String
+  polarPriceId         String?
+
+  // Subscription status
+  status               String    // active, canceled, past_due, unpaid, incomplete, incomplete_expired, trialing
+
+  // Subscription period
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+
+  // Metadata
+  metadata             Json?
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([polarCustomerId])
+}
+
+// Order model to track Polar orders
+model Order {
+  id              String   @id @default(cuid())
+  userId          String?
+  polarOrderId    String   @unique
+  polarCustomerId String?
+  amount          Int      // Amount in cents
+  currency        String   @default("usd")
+  status          String   // pending, succeeded, failed
+  productId       String
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}

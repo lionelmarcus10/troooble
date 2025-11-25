@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { cn } from '@/lib/utils'; // <-- Убедитесь, что импорт правильный
 
 export type Step = 1 | 2 | 3;
@@ -59,26 +60,27 @@ const stepStyles: Record<Step, StepStyle> = {
    },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
    hidden: {
       y: 120,
       transition: {
          duration: 0.2,
-         ease: 'easeIn',
+         // Use cubic-bezier tuple instead of string to satisfy TS types
+         ease: [0.42, 0, 1, 1] as const, // approx easeIn
       },
    },
    visible: {
       y: 0,
       transition: {
          duration: 0.3,
-         ease: 'easeOut',
+         ease: [0, 0, 0.2, 1] as const, // approx easeOut
       },
    },
 };
 
 const AutoLayoutCard = React.forwardRef<
    HTMLDivElement,
-   React.HTMLAttributes<HTMLDivElement>
+   React.ComponentPropsWithoutRef<typeof motion.div>
 >(({ className, ...props }, ref) => {
    const [step, setStep] = useState<Step>(1);
 

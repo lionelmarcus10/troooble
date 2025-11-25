@@ -1,4 +1,0 @@
-----
-- add admin-vm to deploy all challenges from private network
-- add code to refresh token on admin-vm
-- create a service to call admin-vm to deploy challenge for user and fill supabase db

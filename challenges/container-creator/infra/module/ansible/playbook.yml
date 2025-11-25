@@ -1,7 +1,0 @@
----
-- name: Provision container-creator challenge VM
-  hosts: local
-  become: true
-  roles:
-    - docker
-    - webapp

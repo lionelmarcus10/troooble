@@ -37,16 +37,65 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    // !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const pathname = request.nextUrl.pathname
+  const isAuthRoute = pathname.startsWith('/auth')
+  const isDashboardRoute = pathname.startsWith('/dashboard')
+  const isPublicRoute = pathname === '/' || pathname.startsWith('/_next') || pathname.startsWith('/api')
+
+  // ==========================================
+  // AUTHENTICATION PROTECTION
+  // ==========================================
+
+  // Protect all /dashboard routes - require authentication
+  if (isDashboardRoute && !user) {
     const url = request.nextUrl.clone()
-    // url.pathname = '/login'
+    url.pathname = '/auth'
+    url.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(url)
+  }
+
+  // Redirect unauthenticated users trying to access protected routes (not dashboard, not auth, not public)
+  if (!user && !isAuthRoute && !isPublicRoute) {
+    const url = request.nextUrl.clone()
     url.pathname = '/auth'
     return NextResponse.redirect(url)
+  }
+
+  // ==========================================
+  // RECOVERY SESSION PROTECTION
+  // ==========================================
+
+  // Check if user is trying to access dashboard with a recovery/temporary session
+  // Recovery sessions are created when users click password reset links
+  // Note: Supabase creates a temporary session when users click password reset links
+  // This session should only allow access to the password reset page
+  if (user && session && isDashboardRoute) {
+    // Check if this is a recovery session by looking at user metadata or session properties
+    const userMetadata = user.user_metadata as Record<string, unknown>
+    const appMetadata = user.app_metadata as Record<string, unknown>
+
+    // Recovery sessions typically have specific metadata or the user came from a recovery flow
+    // We can check if the user has recently used a recovery token
+    if (appMetadata?.recovery_sent_at || userMetadata?.is_recovery) {
+      const recoverySentAt = appMetadata?.recovery_sent_at as string | undefined
+      if (recoverySentAt) {
+        const recoveryTime = new Date(recoverySentAt).getTime()
+        const currentTime = Date.now()
+        const oneHour = 60 * 60 * 1000
+
+        // If recovery was sent less than 1 hour ago, treat as recovery session
+        if (currentTime - recoveryTime < oneHour) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/auth/reset-password'
+          url.searchParams.set('from', 'recovery')
+          return NextResponse.redirect(url)
+        }
+      }
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

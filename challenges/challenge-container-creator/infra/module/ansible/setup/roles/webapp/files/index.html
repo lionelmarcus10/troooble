@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Frontend</title>
+    </head>
+    <body>
+        <h1>Frontend</h1>
+        <p>This should call the backend in next lines.....</p>
+        <div id="result"></div>
+        <script>
+            // Api must be called by client on http://<baseurl>:80/api
+            document.addEventListener('DOMContentLoaded', function() {
+                fetch('/api/')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('result').innerHTML = '<p>Backend Response: ' + JSON.stringify(data) + '</p>';
+                    })
+                    .catch(error => {
+                        document.getElementById('result').innerHTML = '<p>Error calling backend: ' + error + '</p>';
+                    });
+            });
+        </script>
+    </body>
+</html>

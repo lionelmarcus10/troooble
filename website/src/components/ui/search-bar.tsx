@@ -101,7 +101,7 @@ const ChallengeCardSearchComponent = ({ items, labels }: ChallengeCardSearchProp
   const [query, setQuery] = useState("")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "">("") 
   const [filteredItems, setFilteredItems] = useState(items)
-  console.count("Render Count")
+
   useEffect(() => {
     const lowerCaseQuery = query.toLowerCase().trim()
     let results = items.filter(
@@ -123,7 +123,7 @@ const ChallengeCardSearchComponent = ({ items, labels }: ChallengeCardSearchProp
   return (
     <div className="min-h-screen w-full bg-background">
       {/* Header Section */}
-      <div className="w-full bg-card border-b">
+      <div className="w-full border-b">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-4 mb-8">
             <h1 className="text-4xl font-bold tracking-tight">Issue Tracker</h1>

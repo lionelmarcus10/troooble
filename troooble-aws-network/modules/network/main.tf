@@ -66,10 +66,15 @@ resource "aws_eip" "nat" {
 
 # Attribute ip to nat gateway on each public subnet
 resource "aws_nat_gateway" "nat" {
-  for_each = aws_subnet.public-subnet
+  for_each = var.enable_nat_gateway ? aws_subnet.public-subnet : {}
   allocation_id = aws_eip.nat[each.key].id
   subnet_id     = aws_subnet.public-subnet[each.key].id
   tags = merge(
     var.tags, { Name = "${var.name}-nat-${each.key}" }
   )
+}
+
+
+data "aws_s3_bucket" "bucket" {
+  bucket = var.bucket_name
 }

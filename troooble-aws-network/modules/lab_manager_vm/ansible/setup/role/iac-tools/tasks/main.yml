@@ -1,0 +1,125 @@
+# install terragrunt version v0.87.3 for linux arm64
+---
+- name: Set Terragrunt variables
+  set_fact:
+    terragrunt_os: "linux"
+    terragrunt_arch: "arm64"
+    terragrunt_version: "v0.87.3"
+    terragrunt_binary_name: "terragrunt_linux_arm64"
+    terragrunt_url: "https://github.com/gruntwork-io/terragrunt/releases/download/v0.87.3/terragrunt_linux_arm64"
+    terragrunt_checksum_url: "https://github.com/gruntwork-io/terragrunt/releases/download/v0.87.3/SHA256SUMS"
+
+- name: Create temporary directory for Terragrunt download
+  tempfile:
+    state: directory
+    suffix: terragrunt
+  register: terragrunt_temp_dir
+
+- name: Download Terragrunt binary
+  get_url:
+    url: "{{ terragrunt_url }}"
+    dest: "{{ terragrunt_temp_dir.path }}/{{ terragrunt_binary_name }}"
+    mode: '0755'
+  register: terragrunt_download
+
+- name: Download SHA256SUMS file
+  get_url:
+    url: "{{ terragrunt_checksum_url }}"
+    dest: "{{ terragrunt_temp_dir.path }}/SHA256SUMS"
+    mode: '0644'
+
+- name: Calculate downloaded file checksum
+  stat:
+    path: "{{ terragrunt_temp_dir.path }}/{{ terragrunt_binary_name }}"
+    checksum_algorithm: sha256
+  register: downloaded_checksum
+
+- name: Extract expected checksum from SHA256SUMS
+  shell: |
+    grep "{{ terragrunt_binary_name }}" "{{ terragrunt_temp_dir.path }}/SHA256SUMS" | awk '{print $1}'
+  register: expected_checksum
+  changed_when: false
+
+- name: Verify checksum
+  assert:
+    that:
+      - downloaded_checksum.stat.checksum == expected_checksum.stdout
+    fail_msg: "Checksum verification failed! Downloaded: {{ downloaded_checksum.stat.checksum }}, Expected: {{ expected_checksum.stdout }}"
+    success_msg: "Checksums match! Terragrunt download verified."
+
+- name: Copy Terragrunt to /usr/local/bin
+  copy:
+    src: "{{ terragrunt_temp_dir.path }}/{{ terragrunt_binary_name }}"
+    dest: /usr/local/bin/terragrunt
+    mode: '0755'
+    owner: root
+    group: root
+    remote_src: yes
+  become: true
+
+- name: Verify Terragrunt installation
+  command: terragrunt --version
+  register: terragrunt_version_check
+  changed_when: false
+
+- name: Display Terragrunt version
+  debug:
+    msg: "Terragrunt installed successfully: {{ terragrunt_version_check.stdout }}"
+
+- name: Clean up temporary directory
+  file:
+    path: "{{ terragrunt_temp_dir.path }}"
+    state: absent
+
+
+# install terraform 
+
+- name: Set Terraform variables
+  set_fact:
+    terraform_version: "1.5.6"
+    terraform_os: "linux"
+    terraform_arch: "amd64"
+    terraform_zip_name: "terraform_{{ terraform_version }}_linux_amd64.zip"
+    terraform_url: "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+
+- name: Create temporary directory for Terraform download
+  tempfile:
+    state: directory
+    suffix: terraform
+  register: terraform_temp_dir
+
+- name: Download Terraform zip
+  get_url:
+    url: "{{ terraform_url }}"
+    dest: "{{ terraform_temp_dir.path }}/{{ terraform_zip_name }}"
+    mode: '0644'
+
+- name: Unzip Terraform binary
+  unarchive:
+    src: "{{ terraform_temp_dir.path }}/{{ terraform_zip_name }}"
+    dest: "{{ terraform_temp_dir.path }}"
+    remote_src: yes
+
+- name: Copy Terraform to /usr/local/bin
+  copy:
+    src: "{{ terraform_temp_dir.path }}/terraform"
+    dest: /usr/local/bin/terraform
+    mode: '0755'
+    owner: root
+    group: root
+    remote_src: yes
+  become: true
+
+- name: Verify Terraform installation
+  command: terraform -v
+  register: terraform_version_check
+  changed_when: false
+
+- name: Display Terraform version
+  debug:
+    msg: "Terraform installed successfully: {{ terraform_version_check.stdout }}"
+
+- name: Clean up Terraform temporary directory
+  file:
+    path: "{{ terraform_temp_dir.path }}"
+    state: absent

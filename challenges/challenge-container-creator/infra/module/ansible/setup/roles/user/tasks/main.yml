@@ -1,0 +1,34 @@
+---
+
+- name: Create user
+  user:
+    name: "{{ username }}"
+    shell: /bin/bash
+    create_home: yes
+    password: "{{ user_password | password_hash('sha512') }}"
+
+- name: Set up SSH key for user
+  authorized_key:
+    user: "{{ username }}"
+    state: present
+    key: "{{ user_ssh_public_key }}"
+
+- name: Verify user was created
+  debug:
+    msg: "User {{ username }} created with password hash"
+
+- name: Check user in passwd file
+  command: "getent passwd {{ username }}"
+  register: user_check
+  
+- name: Display user info
+  debug:
+    var: user_check.stdout
+
+- name: Set proper SSH directory permissions
+  file:
+    path: "/home/{{ username }}/.ssh"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: '0700'

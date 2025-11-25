@@ -35,3 +35,8 @@ variable "bucket_name" {
 variable "bucket_folder" {
     type = string 
 }
+
+variable "enable_nat_gateway" {
+    type    = bool
+    default = false
+}

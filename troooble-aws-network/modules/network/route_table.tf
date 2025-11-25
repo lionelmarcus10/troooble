@@ -13,7 +13,7 @@ resource "aws_route_table" "public-rt" {
 
 # Create private route tables and associate with NAT gateways
 resource "aws_route_table" "private-rt" {
-  for_each = aws_subnet.private-subnet
+  for_each = var.enable_nat_gateway ? aws_subnet.private-subnet : {}
   vpc_id = aws_vpc.vpc.id
   
   # Route to internet via NAT Gateway
@@ -39,7 +39,7 @@ resource "aws_route_table_association" "public_assoc" {
 
 # Associate private subnets with their respective private route tables
 resource "aws_route_table_association" "private_assoc" {
-  for_each = aws_subnet.private-subnet
+  for_each = var.enable_nat_gateway ? aws_subnet.private-subnet : {}
   subnet_id = each.value.id
   route_table_id = aws_route_table.private-rt[each.key].id
 }

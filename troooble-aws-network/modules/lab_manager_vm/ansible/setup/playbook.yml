@@ -1,0 +1,7 @@
+---
+- name: Provision lab manager VM
+  hosts: local
+  become: true
+  roles:
+    - docker
+    - iac-tools

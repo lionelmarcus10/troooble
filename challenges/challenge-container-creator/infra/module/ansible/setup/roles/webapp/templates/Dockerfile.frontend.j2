@@ -1,0 +1,8 @@
+FROM nginx:alpine
+
+# Copy custom index.html
+COPY index.html /usr/share/nginx/html/index.html
+
+# Copy reverse proxy configuration for api endpoint
+COPY missing.conf /etc/nginx/conf.d/default.conf
+

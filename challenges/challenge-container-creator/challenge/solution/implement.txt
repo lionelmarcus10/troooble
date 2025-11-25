@@ -1,0 +1,5 @@
+- connect as ec2-user
+- run only webapp role
+- add solution folder files to overwrite existing one
+- run docker-firewalld.sh file in root
+- rebuild webapp and run it

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import crypto from "crypto";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../../../../prisma/clients";
 
 // Webhook event types from Polar
 type PolarWebhookEvent = {
@@ -92,7 +90,7 @@ async function handleSubscriptionCreated(subscription: SubscriptionEvent) {
         currentPeriodEnd: new Date(subscription.current_period_end),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at) : null,
-        metadata: subscription.metadata,
+        metadata: subscription.metadata ? JSON.parse(JSON.stringify(subscription.metadata)) : undefined,
       },
     });
 
@@ -114,7 +112,7 @@ async function handleSubscriptionUpdated(subscription: SubscriptionEvent) {
         currentPeriodEnd: new Date(subscription.current_period_end),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at) : null,
-        metadata: subscription.metadata,
+        metadata: subscription.metadata ? JSON.parse(JSON.stringify(subscription.metadata)) : undefined,
       },
     });
 
@@ -167,7 +165,7 @@ async function handleOrderCreated(order: OrderEvent) {
         currency: order.currency,
         status: "succeeded",
         productId: order.product_id,
-        metadata: order.metadata,
+        metadata: order.metadata ? JSON.parse(JSON.stringify(order.metadata)) : undefined,
       },
     });
 
@@ -242,7 +240,5 @@ export async function POST(request: NextRequest) {
       { error: "Webhook handler failed" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

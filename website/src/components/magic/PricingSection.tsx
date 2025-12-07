@@ -1,11 +1,10 @@
 import { cn } from "@/lib/utils";
-import { CircleCheck, CheckCircle2 } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { PolarApi } from "@/lib/polar";
 import Image from "next/image";
 import Link from "next/link";
-import { getUserSubscription } from "@/app/actions/subscription/action";
 
 // Type inference from Polar API response
 type Product = Awaited<ReturnType<typeof PolarApi.products.list>>["result"]["items"][number];
@@ -13,8 +12,6 @@ type Product = Awaited<ReturnType<typeof PolarApi.products.list>>["result"]["ite
 interface PolarPricingCardProps {
     product: Product;
     featured?: boolean;
-    isCurrentPlan?: boolean;
-    currentPlanAmount?: number;
 }
 
 function formatPrice(product: Product): string {
@@ -56,40 +53,24 @@ function getPriceAmount(price: Product["prices"][number] | undefined): number {
     return 0;
 }
 
-function PolarPricingCard({ product, featured = false, isCurrentPlan = false, currentPlanAmount = 0 }: PolarPricingCardProps) {
+function PolarPricingCard({ product, featured = false }: PolarPricingCardProps) {
     const price = formatPrice(product);
     const benefits = product.benefits || [];
     const image = product.medias?.[0];
     const priceId = product.prices?.[0]?.id;
     const productId = product.id;
-    const planAmount = getPriceAmount(product.prices?.[0]);
-
-    // Determine if this is an upgrade or downgrade
-    const isUpgrade = currentPlanAmount > 0 && planAmount > currentPlanAmount;
-    const isDowngrade = currentPlanAmount > 0 && planAmount < currentPlanAmount && planAmount > 0;
 
     return (
         <div
             className={cn(
-                "flex flex-col rounded-lg border p-6 text-left transition-all",
-                !isCurrentPlan && !isDowngrade && "hover:shadow-lg",
-                featured && !isCurrentPlan && "border-primary shadow-lg ring-2 ring-primary/20 scale-105 relative",
-                isCurrentPlan && "border-primary ring-2 ring-primary/30"
+                "flex flex-col rounded-lg border p-6 text-left transition-all hover:shadow-lg",
+                featured && "border-primary shadow-lg ring-2 ring-primary/20 scale-105 relative"
             )}
         >
-            {featured && !isCurrentPlan && (
+            {featured && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                         Most Popular
-                    </span>
-                </div>
-            )}
-
-            {isCurrentPlan && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Current Plan
                     </span>
                 </div>
             )}
@@ -108,7 +89,7 @@ function PolarPricingCard({ product, featured = false, isCurrentPlan = false, cu
                 )}
 
                 <div className="inline-flex items-center gap-2 mb-2">
-                    <Badge variant={featured && !isCurrentPlan ? "default" : "secondary"}>
+                    <Badge variant={featured ? "default" : "secondary"}>
                         {product.name}
                     </Badge>
                 </div>
@@ -141,36 +122,16 @@ function PolarPricingCard({ product, featured = false, isCurrentPlan = false, cu
             </ul>
 
             <div className="mt-auto">
-                {isCurrentPlan ? (
-                    <Button
-                        size="lg"
-                        className="w-full"
-                        variant="outline"
-                        disabled
-                    >
-                        Current Plan
-                    </Button>
-                ) : isDowngrade ? (
-                    <Button
-                        size="lg"
-                        className="w-full"
-                        variant="outline"
-                        disabled
-                    >
-                        Downgrade Not Allowed
-                    </Button>
-                ) : (
-                    <Button
-                        size="lg"
-                        className="w-full"
-                        variant={featured ? "default" : "outline"}
-                        asChild
-                    >
-                        <Link href={priceId && productId ? `/checkout?price=${priceId}&product=${productId}` : '#'}>
-                            {isUpgrade ? "Upgrade Now" : (price === "Free" ? "Get Started" : "Subscribe Now")}
-                        </Link>
-                    </Button>
-                )}
+                <Button
+                    size="lg"
+                    className="w-full"
+                    variant={featured ? "default" : "outline"}
+                    asChild
+                >
+                    <Link href={priceId && productId ? `/checkout?price=${priceId}&product=${productId}` : '#'}>
+                        {price === "Free" ? "Get Started" : "Subscribe Now"}
+                    </Link>
+                </Button>
             </div>
         </div>
     );
@@ -185,22 +146,6 @@ export default async function PricingSection() {
         });
 
         const products = response.result?.items || [];
-
-        // Get current user's subscription
-        const { subscription } = await getUserSubscription();
-        const currentProductId = subscription?.productId;
-
-        // Get current plan's price amount
-        let currentPlanAmount = 0;
-        if (subscription?.priceId) {
-            for (const product of products) {
-                const price = product.prices?.find(p => p.id === subscription.priceId);
-                if (price) {
-                    currentPlanAmount = getPriceAmount(price);
-                    break;
-                }
-            }
-        }
 
         // Sort products by price (lowest to highest)
         const sortedProducts = products.sort((a, b) => {
@@ -225,19 +170,13 @@ export default async function PricingSection() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto md:grid-cols-2 lg:grid-cols-3 pt-4">
-                        {sortedProducts.map((product, index) => {
-                            const isCurrentPlan = product.id === currentProductId;
-
-                            return (
-                                <PolarPricingCard
-                                    key={product.id}
-                                    product={product}
-                                    featured={index === featuredIndex && !isCurrentPlan}
-                                    isCurrentPlan={isCurrentPlan}
-                                    currentPlanAmount={currentPlanAmount}
-                                />
-                            );
-                        })}
+                        {sortedProducts.map((product, index) => (
+                            <PolarPricingCard
+                                key={product.id}
+                                product={product}
+                                featured={index === featuredIndex}
+                            />
+                        ))}
                     </div>
 
                     {products.length === 0 && (

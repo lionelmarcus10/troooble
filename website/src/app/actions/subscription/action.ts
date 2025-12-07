@@ -1,10 +1,8 @@
 'use server'
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../../../prisma/clients";
 import { createClient } from "@/utils/supabase/server";
 import { cache } from "react";
-
-const prisma = new PrismaClient();
 
 export type SubscriptionStatus = {
   hasActiveSubscription: boolean;
@@ -91,8 +89,6 @@ export const getUserSubscription = cache(async (): Promise<SubscriptionStatus> =
       subscription: null,
       tier: "free",
     };
-  } finally {
-    await prisma.$disconnect();
   }
 });
 
@@ -153,8 +149,6 @@ export async function syncUserWithDatabase() {
   } catch (error) {
     console.error("Error syncing user with database:", error);
     return { success: false, error: "Failed to sync user" };
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -185,7 +179,5 @@ export async function getUserSubscriptions() {
   } catch (error) {
     console.error("Error fetching user subscriptions:", error);
     return [];
-  } finally {
-    await prisma.$disconnect();
   }
 }

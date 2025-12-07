@@ -1,15 +1,35 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle } from "lucide-react";
 
+function CheckoutLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="max-w-md w-full">
+        <CardContent className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutLoading />}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,7 +38,6 @@ export default function CheckoutPage() {
 
     if (!priceId) {
       setError("Missing price information");
-      setLoading(false);
       return;
     }
 
@@ -43,7 +62,6 @@ export default function CheckoutPage() {
 
       if (!response.ok) {
         setError(data.error || "Failed to create checkout session");
-        setLoading(false);
         return;
       }
 
@@ -52,12 +70,10 @@ export default function CheckoutPage() {
         window.location.href = data.checkoutUrl;
       } else {
         setError("Invalid checkout URL");
-        setLoading(false);
       }
     } catch (err) {
       console.error("Checkout error:", err);
       setError("An unexpected error occurred");
-      setLoading(false);
     }
   };
 

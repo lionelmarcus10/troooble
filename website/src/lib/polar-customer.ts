@@ -1,10 +1,8 @@
 'use server'
 
 import { PolarApi } from "./polar";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../prisma/clients";
 import { createClient } from "@/utils/supabase/server";
-
-const prisma = new PrismaClient();
 
 /**
  * Get or create a Polar customer for the current user
@@ -69,8 +67,6 @@ export async function getOrCreatePolarCustomer(): Promise<{
   } catch (error) {
     console.error("Error in getOrCreatePolarCustomer:", error);
     return { success: false, error: "Internal error" };
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -86,7 +82,7 @@ export async function syncPolarCustomer(customerId: string): Promise<void> {
 
     await PolarApi.customers.update({
       id: customerId,
-      requestBody: {
+      customerUpdate: {
         email: user.email!,
         name: user.user_metadata?.fullName || user.user_metadata?.full_name || undefined,
         metadata: {

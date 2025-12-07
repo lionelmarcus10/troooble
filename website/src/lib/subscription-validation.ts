@@ -1,10 +1,8 @@
 'use server'
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../prisma/clients";
 import { createClient } from "@/utils/supabase/server";
 import { PolarApi } from "./polar";
-
-const prisma = new PrismaClient();
 
 export type SubscriptionValidationResult = {
   canSubscribe: boolean;
@@ -146,8 +144,6 @@ export async function validateSubscription(
       canSubscribe: false,
       reason: "An error occurred while validating your subscription",
     };
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -178,7 +174,5 @@ export async function hasActiveSubscription(): Promise<boolean> {
   } catch (error) {
     console.error("Error checking active subscription:", error);
     return false;
-  } finally {
-    await prisma.$disconnect();
   }
 }

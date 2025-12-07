@@ -53,8 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Create checkout session with Polar
     const checkoutResponse = await PolarApi.checkouts.create({
-
-      productPriceId: priceId,
+      products: [ productId ],
       customerId: customerResult.customerId,
       successUrl: process.env.POLAR_SUCCESS_URL || `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success`,
       customerMetadata: {

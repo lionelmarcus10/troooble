@@ -23,11 +23,16 @@ bun --version
 node --version
 ```
 
-### 2. Install dependencies
+### 2. Configure environment
 
 ```bash
 cd website
+cp .env.example .env
 ```
+
+Edit `.env` with the values provided in the Discord server (`#frontend` channel).
+
+### 3. Install dependencies
 
 **With Bun:**
 

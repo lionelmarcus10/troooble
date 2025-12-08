@@ -9,14 +9,13 @@ include "stack" {
 }
 
 terraform {
-  source = "../../../modules/lab_manager_vm"
+  source = "../../../modules/lab_user_openvpn"
 }
 
 inputs = {
 
   instance_type = "t4g.medium"
   ami_id        = "ami-0b2f2a5d7a4d7f37f"
-  
   bucket_folder = local.bucket_folder
   ingress_ports = [22, 443] 
 }

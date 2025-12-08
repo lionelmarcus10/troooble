@@ -1,0 +1,350 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Challenge Orchestrator Service API",
+    "version": "1.0.0",
+    "description": "API for managing challenge deployments, validations, and Jenkins webhook integrations"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase JWT token"
+      }
+    },
+    "schemas": {
+      "DeployRequest": {
+        "type": "object",
+        "required": ["challengeId"],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "description": "The ID of the challenge to deploy"
+          }
+        }
+      },
+      "ValidateRequest": {
+        "type": "object",
+        "required": ["flag"],
+        "properties": {
+          "flag": {
+            "type": "string",
+            "description": "The flag to validate"
+          }
+        }
+      },
+      "ChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "Unique identifier for the job"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the operation"
+          },
+          "message": {
+            "type": "string",
+            "description": "Optional message with additional details"
+          }
+        }
+      },
+      "WebhookPayload": {
+        "type": "object",
+        "properties": {
+          "jobName": {
+            "type": "string",
+            "description": "Name of the Jenkins job"
+          },
+          "buildNumber": {
+            "type": "integer",
+            "description": "Jenkins build number"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the build"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Optional parameters from the build"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns service name to verify the API is running",
+        "operationId": "healthCheck",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "challenge-orchestrator-service"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenges/deploy": {
+      "post": {
+        "summary": "Deploy Challenge",
+        "description": "Triggers deployment of a challenge infrastructure via Jenkins pipeline",
+        "operationId": "deployChallenge",
+        "tags": ["Challenges"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Deployment job accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenges/{id}/destroy": {
+      "post": {
+        "summary": "Destroy Challenge",
+        "description": "Triggers destruction of a deployed challenge infrastructure via Jenkins pipeline",
+        "operationId": "destroyChallenge",
+        "tags": ["Challenges"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The deployment ID to destroy",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Destroy job accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenges/{id}/validate": {
+      "post": {
+        "summary": "Validate Challenge",
+        "description": "Validates a challenge solution by checking the submitted flag via Jenkins pipeline",
+        "operationId": "validateChallenge",
+        "tags": ["Challenges"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The deployment ID to validate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Validation job accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/webhook": {
+      "post": {
+        "summary": "Jenkins Webhook Callback",
+        "description": "Receives pipeline status updates from Jenkins",
+        "operationId": "jenkinsWebhook",
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook received successfully"
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "summary": "API Documentation",
+        "description": "Interactive API documentation powered by Scalar. Only available when ENABLE_DOCS=true",
+        "operationId": "getDocs",
+        "tags": ["Documentation"],
+        "responses": {
+          "200": {
+            "description": "API documentation HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documentation not enabled"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "Challenges",
+      "description": "Challenge deployment, destruction, and validation operations"
+    },
+    {
+      "name": "Webhooks",
+      "description": "External webhook integrations"
+    },
+    {
+      "name": "Documentation",
+      "description": "API documentation endpoints (requires ENABLE_DOCS=true)"
+    }
+  ]
+}

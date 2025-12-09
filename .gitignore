@@ -89,6 +89,4 @@ yarn-error.log*
 next-env.d.ts
 .claude
 generated-prisma-client
-!README.md
-*.md
 .package-lock.json
